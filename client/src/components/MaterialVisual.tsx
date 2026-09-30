@@ -26,8 +26,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 /** Product photography for catalog tiles, with a supplied listing photo taking priority. */
 export default function MaterialVisual({
   category,
-  imageUrl,
   className,
+  imageUrl,
 }: {
   category: string;
   imageUrl?: string | null;

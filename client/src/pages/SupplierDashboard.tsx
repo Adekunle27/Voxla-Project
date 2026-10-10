@@ -11,6 +11,8 @@ const CATEGORIES = [
 ];
 
 const emptyForm = { category: CATEGORIES[0], name: "", spec: "", description: "", unit: "bag", price: "", stock: "", deliveryDays: "2" };
+type SupplierOrder = { orderItemId: string; materialName: string; unitPrice: number; qty: number; fulfillmentStatus: string; trackingCode: string | null; reference: string; deliveryAddress: string; deliveryCity: string; deliveryPhone: string; preferredDeliveryDate: string | null; createdAt: string; buyerName: string };
+const FULFILLMENT_STATUSES = ["PENDING", "ACCEPTED", "PREPARING", "DISPATCHED", "DELIVERED", "CANCELLED"];
 
 export default function SupplierDashboard() {
   const [listings, setListings] = useState<SupplierListing[]>([]);
@@ -21,6 +23,8 @@ export default function SupplierDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [supplierOrders, setSupplierOrders] = useState<SupplierOrder[]>([]);
+  const [orderError, setOrderError] = useState("");
 
   function loadListings() {
     setLoading(true);
@@ -30,8 +34,13 @@ export default function SupplierDashboard() {
       .finally(() => setLoading(false));
   }
 
+  function loadSupplierOrders() {
+    api.get("/supplier/orders").then((res) => setSupplierOrders(res.data)).catch((err) => setOrderError(err?.response?.data?.error || "Could not load orders."));
+  }
+
   useEffect(() => {
     loadListings();
+    loadSupplierOrders();
   }, []);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -106,6 +115,14 @@ export default function SupplierDashboard() {
   async function toggleActive(l: SupplierListing) {
     await api.patch(`/supplier/listings/${l.id}`, { active: !l.active });
     loadListings();
+  }
+
+  async function updateOrder(order: SupplierOrder, fulfillmentStatus: string) {
+    setOrderError("");
+    try {
+      await api.patch(`/supplier/orders/${order.orderItemId}`, { fulfillmentStatus, trackingCode: order.trackingCode || undefined });
+      loadSupplierOrders();
+    } catch (err: any) { setOrderError(err?.response?.data?.error || "Could not update this order."); }
   }
 
   return (
@@ -207,6 +224,12 @@ export default function SupplierDashboard() {
           )}
         </div>
       </form>
+
+      <section className="mb-10">
+        <div className="flex items-end justify-between mb-4"><div><h3 className="font-montserrat font-bold text-lg text-voxla-ink">Incoming orders</h3><p className="text-xs text-voxla-mid mt-1">Update each line as you accept, prepare, and dispatch it.</p></div><span className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-bold text-voxla-orange">{supplierOrders.filter((order) => order.fulfillmentStatus === "PENDING").length} new</span></div>
+        {orderError && <p className="mb-3 text-xs text-red-600">{orderError}</p>}
+        {supplierOrders.length === 0 ? <p className="rounded-xl border border-dashed border-gray-200 p-5 text-sm text-voxla-mid">New buyer orders will appear here.</p> : <div className="flex flex-col gap-3">{supplierOrders.map((order) => <article key={order.orderItemId} className="rounded-xl border border-gray-200 bg-white p-4"><div className="flex flex-wrap justify-between gap-3"><div><p className="font-montserrat font-bold text-sm text-voxla-ink">{order.materialName} × {order.qty}</p><p className="text-xs text-voxla-mid mt-1">{order.reference} · {order.buyerName} · {money(order.unitPrice * order.qty)}</p><p className="text-xs text-voxla-mid mt-1">Deliver to: {order.deliveryAddress}, {order.deliveryCity} · {order.deliveryPhone}</p>{order.preferredDeliveryDate && <p className="text-xs text-voxla-mid mt-1">Preferred date: {order.preferredDeliveryDate}</p>}</div><div className="min-w-40"><label className="text-[11px] font-bold text-voxla-mid">TRACKING CODE</label><input value={order.trackingCode || ""} onChange={(e) => setSupplierOrders((current) => current.map((item) => item.orderItemId === order.orderItemId ? { ...item, trackingCode: e.target.value } : item))} onBlur={() => updateOrder(order, order.fulfillmentStatus)} placeholder="Optional tracking code" className="mt-1 block w-full border border-gray-300 rounded-lg px-2 py-2 text-xs" /><label className="block mt-2 text-[11px] font-bold text-voxla-mid">FULFILLMENT</label><select value={order.fulfillmentStatus} onChange={(e) => updateOrder(order, e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-lg px-2 py-2 text-xs font-bold text-voxla-blue">{FULFILLMENT_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}</select></div></div></article>)}</div>}
+      </section>
 
       <h3 className="font-montserrat font-bold text-lg text-voxla-ink mb-4">Your Listings</h3>
       {loading && <p className="text-voxla-mid font-inter text-sm">Loading…</p>}

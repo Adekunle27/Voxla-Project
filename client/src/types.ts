@@ -54,6 +54,8 @@ export interface AdminSupplier extends DirectorySupplier {
   contactName: string;
   email: string;
   createdAt: string;
+  verificationNote?: string | null;
+  verificationReviewedAt?: string | null;
 }
 
 export interface CartItem {

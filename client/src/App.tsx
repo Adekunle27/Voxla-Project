@@ -11,6 +11,8 @@ import Orders from "./pages/Orders";
 import SupplierDashboard from "./pages/SupplierDashboard";
 import AdminSupplierVerification from "./pages/AdminSupplierVerification";
 import ProductDetail from "./pages/ProductDetail";
+import PaymentCallback from "./pages/PaymentCallback";
+import Wishlist from "./pages/Wishlist";
 import { useAuth } from "./context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
@@ -43,6 +45,7 @@ function RequireAdmin({ children }: { children: JSX.Element }) {
 
 export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
+  const { user } = useAuth();
   const { items } = useCart();
   const cartCount = items.reduce((s, i) => s + i.qty, 0);
 
@@ -54,6 +57,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/materials" element={<Materials onAdded={() => setCartOpen(true)} />} />
         <Route path="/materials/:id" element={<ProductDetail />} />
+        <Route path="/payment/callback" element={<PaymentCallback />} />
+        <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -82,7 +87,7 @@ export default function App() {
         </div>
       </footer>
 
-      {cartCount > 0 && (
+      {cartCount > 0 && user?.role === "BUYER" && (
         <button
           onClick={() => setCartOpen(true)}
           className="fixed bottom-5 right-5 z-30 rounded-full shadow-xl flex items-center gap-2 px-4 py-3 text-white font-inter font-bold text-sm sm:hidden bg-voxla-orange"

@@ -9,6 +9,7 @@ export default function AdminSupplierVerification() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api.get("/admin/suppliers").then((res) => setSuppliers(res.data)).catch((err) => setError(err?.response?.data?.error || "Could not load supplier accounts.")).finally(() => setLoading(false));
@@ -21,8 +22,9 @@ export default function AdminSupplierVerification() {
     setUpdatingId(supplier.id);
     setError("");
     try {
-      await api.patch(`/admin/suppliers/${supplier.id}/verification`, { verified });
-      setSuppliers((current) => current.map((item) => item.id === supplier.id ? { ...item, verified } : item));
+      const note = notes[supplier.id] ?? supplier.verificationNote ?? "";
+      await api.patch(`/admin/suppliers/${supplier.id}/verification`, { verified, note });
+      setSuppliers((current) => current.map((item) => item.id === supplier.id ? { ...item, verified, verificationNote: note } : item));
     } catch (err: any) {
       setError(err?.response?.data?.error || "The verification update could not be saved.");
     } finally { setUpdatingId(null); }
@@ -38,7 +40,7 @@ export default function AdminSupplierVerification() {
       {error && <p className="mx-4 mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {loading ? <p className="py-16 text-center text-sm text-voxla-mid">Loading supplier accounts...</p> : filtered.length === 0 ? <p className="py-16 text-center text-sm text-voxla-mid">No supplier accounts match this search.</p> : <div className="divide-y divide-slate-100">{filtered.map((supplier) => <article key={supplier.id} className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4 lg:justify-between">
         <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-montserrat font-bold text-base text-voxla-ink">{supplier.name}</h3>{supplier.verified ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700"><CheckCircle2 size={12} /> Verified</span> : <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700"><Clock3 size={12} /> Pending review</span>}</div><p className="text-sm text-voxla-mid mt-1">{supplier.contactName} · {supplier.email}</p><p className="text-xs text-voxla-mid mt-1">{supplier.city} · Joined {new Date(supplier.createdAt).toLocaleDateString()}</p></div>
-        <div className="flex gap-2 shrink-0">{supplier.verified ? <button disabled={updatingId === supplier.id} onClick={() => updateVerification(supplier, false)} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-50"><XCircle size={14} /> Remove badge</button> : <button disabled={updatingId === supplier.id} onClick={() => updateVerification(supplier, true)} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-voxla-blue px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><ShieldCheck size={14} /> {updatingId === supplier.id ? "Saving..." : "Verify supplier"}</button>}</div>
+        <div className="flex flex-col gap-2 shrink-0 min-w-56"><input value={notes[supplier.id] ?? supplier.verificationNote ?? ""} onChange={(e) => setNotes({ ...notes, [supplier.id]: e.target.value })} placeholder="Review note (optional)" className="border border-slate-200 rounded-lg px-3 py-2 text-xs" />{supplier.verified ? <button disabled={updatingId === supplier.id} onClick={() => updateVerification(supplier, false)} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-50"><XCircle size={14} /> Remove badge</button> : <button disabled={updatingId === supplier.id} onClick={() => updateVerification(supplier, true)} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-voxla-blue px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><ShieldCheck size={14} /> {updatingId === supplier.id ? "Saving..." : "Verify supplier"}</button>}</div>
       </article>)}</div>}
     </div>
   </section>;

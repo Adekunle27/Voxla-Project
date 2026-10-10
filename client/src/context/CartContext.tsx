@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { api } from "../api/client";
-import { CartItem, OrderResult } from "../types";
+import { CartItem } from "../types";
 
 interface CartState {
   items: CartItem[];
@@ -8,7 +8,7 @@ interface CartState {
   removeItem: (index: number) => void;
   clear: () => void;
   total: number;
-  checkout: (delivery: { address: string; city: string; phone: string; preferredDate?: string }) => Promise<OrderResult>;
+  checkout: (delivery: { address: string; city: string; phone: string; preferredDate?: string }) => Promise<{ authorizationUrl: string; reference: string }>;
 }
 
 const CartContext = createContext<CartState | undefined>(undefined);
@@ -49,13 +49,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const total = items.reduce((s, i) => s + i.price * i.qty, 0);
 
-  async function checkout(delivery: { address: string; city: string; phone: string; preferredDate?: string }): Promise<OrderResult> {
+  async function checkout(delivery: { address: string; city: string; phone: string; preferredDate?: string }): Promise<{ authorizationUrl: string; reference: string }> {
     const res = await api.post("/orders", {
       items: items.map((i) => ({ materialId: i.materialId, supplierId: i.supplierId, qty: i.qty })),
       delivery,
     });
-    clear();
-    return res.data.order;
+    return res.data;
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, LogOut } from "lucide-react";
+import { Heart, ShoppingCart, Menu, LogOut } from "lucide-react";
 import Logo from "./Logo";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -22,7 +22,8 @@ export default function Nav({ onCartClick }: { onCartClick: () => void }) {
           <Link to="/suppliers" className="hover:text-white">Suppliers</Link>
           {user?.role === "SUPPLIER" && <Link to="/supplier/dashboard" className="hover:text-white">Dashboard</Link>}
           {user?.role === "ADMIN" && <Link to="/admin/suppliers" className="hover:text-white">Verification</Link>}
-          {user && <Link to="/orders" className="hover:text-white">My Orders</Link>}
+          {user?.role === "BUYER" && <Link to="/orders" className="hover:text-white">My Orders</Link>}
+          <Link to="/wishlist" className="hover:text-white">Saved</Link>
         </nav>
         <div className="flex items-center gap-2">
           {user ? (
@@ -34,14 +35,15 @@ export default function Nav({ onCartClick }: { onCartClick: () => void }) {
               Sign in
             </button>
           )}
-          <button onClick={onCartClick} className="relative p-2 rounded-lg hover:bg-white/10" aria-label="Cart">
+          {user?.role !== "SUPPLIER" && <button onClick={onCartClick} className="relative p-2 rounded-lg hover:bg-white/10" aria-label="Cart">
             <ShoppingCart size={20} color="#fff" />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center text-white bg-voxla-orange">
                 {cartCount}
               </span>
             )}
-          </button>
+          </button>}
+          <Link to="/wishlist" className="p-2 rounded-lg hover:bg-white/10" aria-label="Saved products"><Heart size={19} color="#fff" /></Link>
           <button className="md:hidden p-2" onClick={() => setOpen((o) => !o)}>
             <Menu size={20} color="#fff" />
           </button>
@@ -53,7 +55,8 @@ export default function Nav({ onCartClick }: { onCartClick: () => void }) {
           <Link to="/suppliers" className="py-2" onClick={() => setOpen(false)}>Suppliers</Link>
           {user?.role === "SUPPLIER" && <Link to="/supplier/dashboard" className="py-2" onClick={() => setOpen(false)}>Dashboard</Link>}
           {user?.role === "ADMIN" && <Link to="/admin/suppliers" className="py-2" onClick={() => setOpen(false)}>Verification</Link>}
-          {user && <Link to="/orders" className="py-2" onClick={() => setOpen(false)}>My Orders</Link>}
+          {user?.role === "BUYER" && <Link to="/orders" className="py-2" onClick={() => setOpen(false)}>My Orders</Link>}
+          <Link to="/wishlist" className="py-2" onClick={() => setOpen(false)}>Saved products</Link>
           {user ? (
             <button className="py-2 text-left" onClick={() => { logout(); setOpen(false); }}>Sign out</button>
           ) : (

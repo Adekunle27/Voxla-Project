@@ -5,6 +5,7 @@ import { Material, SupplierOption } from "../types";
 import { money } from "../utils/format";
 import VerifiedBadge from "./VerifiedBadge";
 import MaterialVisual from "./MaterialVisual";
+import { useAuth } from "../context/AuthContext";
 
 export default function CompareModal({
   material,
@@ -15,6 +16,7 @@ export default function CompareModal({
   onClose: () => void;
   onAdd: (material: Material, supplier: SupplierOption) => void;
 }) {
+  const { user } = useAuth();
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -67,12 +69,12 @@ export default function CompareModal({
                     <div className="text-[10px] font-inter text-voxla-mid">per {material.unit}</div>
                   </div>
                 </div>
-                <button
+                {user?.role !== "SUPPLIER" && <button
                   onClick={() => onAdd(material, s)}
                   className="w-full rounded-lg py-2 text-xs font-inter font-bold flex items-center justify-center gap-1.5 border border-voxla-blue text-voxla-blue"
                 >
                   <ShoppingCart size={13} /> Add to cart
-                </button>
+                </button>}
               </div>
             ))}
         </div>
